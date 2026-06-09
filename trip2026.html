@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080c14">
+<title>首爾＋福岡 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&family=Noto+Sans+TC:wght@300;400;500&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ─────────────────────────────────────────── */
+:root{
+  --bg:#080c14; --bg1:#0d1220; --bg2:#111828;
+  --s1:rgba(255,255,255,.04); --s2:rgba(255,255,255,.07); --s3:rgba(255,255,255,.11);
+  --b1:rgba(255,255,255,.07); --b2:rgba(255,255,255,.13); --b3:rgba(255,255,255,.22);
+  --txt:#ede8df; --dim:rgba(237,232,223,.45); --dim2:rgba(237,232,223,.22);
+  --kr:#e8734a; --kr2:#f0986e; --jp:#4a9ee8; --jp2:#7dbff5;
+  --gold:#c9a86c; --gold2:#e8cc9a;
+  --grn:#6ec46e; --red:#e87272; --ylw:#e8c44a;
+  --r:16px; --rr:22px;
+  --mono:'DM Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:'Noto Sans TC',sans-serif;color:var(--txt);
+  display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative}
+
+/* ── BG MESH ─────────────────────────────────────────── */
+.mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.mesh::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;
+  top:-200px;left:-150px;
+  background:radial-gradient(ellipse,rgba(232,115,74,.09) 0%,transparent 65%)}
+.mesh::after{content:'';position:absolute;width:500px;height:500px;border-radius:50%;
+  bottom:-180px;right:-120px;
+  background:radial-gradient(ellipse,rgba(74,158,232,.08) 0%,transparent 65%)}
+.grid-lines{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:40px 40px}
+
+/* ── HEADER ─────────────────────────────────────────── */
+header{position:relative;z-index:2;padding:52px 22px 14px;flex-shrink:0}
+.pill-row{display:flex;gap:8px;margin-bottom:12px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;
+  border-radius:20px;font-size:11px;font-weight:500;letter-spacing:.04em}
+.pill-kr{background:rgba(232,115,74,.14);color:var(--kr2);border:1px solid rgba(232,115,74,.26)}
+.pill-jp{background:rgba(74,158,232,.13);color:var(--jp2);border:1px solid rgba(74,158,232,.24)}
+h1{font-family:'Noto Serif TC',serif;font-size:27px;font-weight:900;line-height:1.18;margin-bottom:4px}
+h1 em{font-style:normal;color:var(--gold)}
+.sub{font-size:12px;color:var(--dim);display:flex;align-items:center;gap:8px}
+.sub-dot{width:3px;height:3px;border-radius:50%;background:var(--b3)}
+.sync-info{font-size:10px;color:var(--dim2);margin-top:6px;font-family:var(--mono)}
+
+/* ── WEATHER ─────────────────────────────────────────── */
+.wx-row{display:flex;gap:8px;margin:10px 22px 12px;flex-shrink:0;z-index:2;position:relative}
+.wx{flex:1;border-radius:var(--r);padding:11px 13px;
+  display:flex;align-items:center;gap:10px;border:1px solid var(--b1)}
+.wx.kr{background:rgba(232,115,74,.07);border-color:rgba(232,115,74,.18)}
+.wx.jp{background:rgba(74,158,232,.07);border-color:rgba(74,158,232,.18)}
+.wx-icon{font-size:26px;flex-shrink:0;line-height:1}
+.wx-city{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:1px}
+.wx-temp{font-family:var(--mono);font-size:21px;line-height:1}
+.wx-desc{font-size:10px;color:var(--dim);margin-top:1px}
+
+/* ── TABS ─────────────────────────────────────────── */
+.tabs{display:flex;gap:0;margin:0 22px 12px;
+  background:var(--s1);border-radius:13px;padding:3px;
+  border:1px solid var(--b1);flex-shrink:0;z-index:2;position:relative}
+.tab{flex:1;padding:8px 2px;background:none;border:none;cursor:pointer;
+  color:var(--dim);font-size:10.5px;font-family:'Noto Sans TC',sans-serif;
+  border-radius:10px;transition:all .2s;
+  display:flex;flex-direction:column;align-items:center;gap:2px}
+.tab .ti{font-size:16px}
+.tab.on{background:var(--s3);color:var(--txt);font-weight:500}
+
+/* ── PANELS ─────────────────────────────────────────── */
+.panels{flex:1;overflow:hidden;position:relative;z-index:1}
+.panel{display:none;height:100%;overflow-y:auto;
+  padding:4px 22px 80px;-webkit-overflow-scrolling:touch}
+.panel.on{display:block}
+.panel::-webkit-scrollbar{width:2px}
+.panel::-webkit-scrollbar-thumb{background:var(--b2);border-radius:1px}
+
+/* ── SECTION LABEL ─────────────────────────────────── */
+.sec{font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--gold);margin:16px 0 10px;
+  display:flex;align-items:center;gap:8px}
+.sec:first-child{margin-top:4px}
+.sec::after{content:'';flex:1;height:1px;background:var(--b1)}
+
+/* ── LOADING / ERROR ─────────────────────────────────── */
+.loading,.no-data{text-align:center;padding:40px 0;color:var(--dim);font-size:13px}
+.spinner{width:20px;height:20px;border-radius:50%;
+  border:2px solid var(--b2);border-top-color:var(--gold);
+  animation:spin .7s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err-box{background:rgba(232,114,114,.07);border:1px solid rgba(232,114,114,.2);
+  border-radius:var(--r);padding:14px;font-size:12px;color:var(--red);
+  line-height:1.7;margin-bottom:10px}
+.err-box code{font-family:var(--mono);font-size:10px;
+  background:rgba(255,255,255,.07);padding:1px 5px;border-radius:3px}
+
+/* ── FLIGHT CARD ─────────────────────────────────────── */
+.flight-card{background:var(--s1);border:1px solid var(--b1);
+  border-radius:var(--rr);padding:15px 16px;margin-bottom:10px;
+  position:relative;overflow:hidden}
+.flight-card::before{content:'';position:absolute;
+  top:0;left:0;right:0;height:2px}
+.flight-card.depart::before{background:linear-gradient(90deg,var(--kr),transparent)}
+.flight-card.arrive::before{background:linear-gradient(90deg,var(--jp),transparent)}
+.flight-card.return-f::before{background:linear-gradient(90deg,var(--gold),transparent)}
+.fl-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.fl-num{font-family:var(--mono);font-size:13px;font-weight:500;
+  display:flex;align-items:center;gap:8px}
+.fl-airline{font-size:11px;color:var(--dim);padding:2px 8px;
+  background:var(--s2);border-radius:5px}
+.fl-date{font-size:11px;color:var(--dim);font-family:var(--mono)}
+.fl-route{display:flex;align-items:center;gap:0;justify-content:space-between}
+.fl-airport{text-align:center;flex:1}
+.fl-iata{font-family:var(--mono);font-size:22px;font-weight:500;line-height:1;margin-bottom:3px}
+.fl-time{font-family:var(--mono);font-size:14px;color:var(--dim2);margin-bottom:2px}
+.fl-terminal{font-size:10px;color:var(--dim2)}
+.fl-arrow{flex:0 0 auto;padding:0 8px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.fl-line{width:60px;height:1px;background:linear-gradient(90deg,var(--b2),var(--b3),var(--b2))}
+.fl-plane{font-size:14px;transform:rotate(0deg)}
+.fl-remark{margin-top:10px;padding-top:10px;border-top:1px solid var(--b1);
+  font-size:11px;color:var(--dim);line-height:1.6;display:flex;align-items:flex-start;gap:6px}
+.fl-remark::before{content:'💬';flex-shrink:0}
+.fl-ref{display:inline-flex;align-items:center;gap:4px;
+  background:var(--s2);border:1px solid var(--b2);
+  border-radius:6px;padding:3px 8px;font-family:var(--mono);font-size:11px;margin-top:6px}
+.fl-ref-label{font-size:10px;color:var(--dim)}
+
+/* ── HOTEL CARD ─────────────────────────────────────── */
+.hotel-card{background:var(--s1);border:1px solid var(--b1);
+  border-radius:var(--rr);padding:15px 16px;margin-bottom:10px}
+.hc-badge{display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;padding:3px 9px;border-radius:20px;
+  margin-bottom:10px;font-weight:500;letter-spacing:.04em}
+.hc-badge.kr{background:rgba(232,115,74,.12);color:var(--kr2);border:1px solid rgba(232,115,74,.22)}
+.hc-badge.jp{background:rgba(74,158,232,.12);color:var(--jp2);border:1px solid rgba(74,158,232,.22)}
+.hc-name{font-family:'Noto Serif TC',serif;font-size:17px;font-weight:600;margin-bottom:3px}
+.hc-sub{font-size:11px;color:var(--dim);margin-bottom:11px}
+.hc-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.hc-field .lbl{font-size:10px;color:var(--dim);margin-bottom:2px}
+.hc-field .val{font-size:13px;font-weight:500}
+.hc-remark{margin-top:10px;padding-top:10px;border-top:1px solid var(--b1);
+  font-size:11px;color:var(--dim);line-height:1.7}
+
+/* ── SCHEDULE ─────────────────────────────────────────── */
+.day-block{margin-bottom:14px}
+.day-hdr{display:flex;align-items:center;gap:10px;
+  padding:11px 14px;background:var(--s1);border:1px solid var(--b1);
+  border-radius:var(--r) var(--r) 0 0;cursor:pointer;
+  border-bottom:none}
+.day-hdr.closed{border-radius:var(--r);border-bottom:1px solid var(--b1)}
+.day-badge{width:32px;height:32px;border-radius:9px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Noto Serif TC',serif;font-weight:900;font-size:13px;color:var(--bg)}
+.day-info{flex:1}
+.day-title{font-size:14px;font-weight:500}
+.day-date{font-size:11px;color:var(--dim);margin-top:1px}
+.day-chev{color:var(--dim);font-size:16px;transition:transform .25s}
+.day-hdr.open .day-chev{transform:rotate(180deg)}
+.day-body{background:var(--s1);border:1px solid var(--b1);border-top:none;
+  border-radius:0 0 var(--r) var(--r);overflow:hidden}
+.tl{padding:12px 14px}
+.tl-item{display:flex;gap:11px;margin-bottom:13px;position:relative}
+.tl-item:last-child{margin-bottom:0}
+.tl-item:not(:last-child) .tl-dot::after{
+  content:'';position:absolute;top:18px;left:5px;
+  width:2px;height:calc(100% + 6px);background:var(--b2)}
+.tl-dot{flex-shrink:0;width:12px;height:12px;border-radius:50%;margin-top:3px;
+  background:var(--gold);border:2px solid var(--bg);
+  box-shadow:0 0 0 1px var(--gold);position:relative}
+.tl-time{font-family:var(--mono);font-size:10px;color:var(--gold);margin-bottom:2px}
+.tl-place{font-size:13px;font-weight:500;margin-bottom:2px}
+.tl-note{font-size:11px;color:var(--dim);line-height:1.6}
+
+/* ── FOOD ─────────────────────────────────────────── */
+.food-card{background:var(--s1);border:1px solid var(--b1);
+  border-radius:var(--rr);overflow:hidden;margin-bottom:10px}
+.food-item{display:flex;align-items:center;gap:11px;
+  padding:11px 14px;border-bottom:1px solid var(--b1)}
+.food-item:last-child{border-bottom:none}
+.food-icon{width:34px;height:34px;border-radius:10px;
+  background:var(--s2);display:flex;align-items:center;justify-content:center;
+  font-size:17px;flex-shrink:0}
+.food-body{flex:1;min-width:0}
+.food-name{font-size:13px;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.food-meta{font-size:10px;color:var(--dim);margin-top:1px;line-height:1.5}
+.food-badge{display:inline-flex;align-items:center;
+  padding:2px 7px;border-radius:4px;font-size:9px;letter-spacing:.06em;
+  margin-left:6px;vertical-align:middle}
+.food-badge.kr{background:rgba(232,115,74,.12);color:var(--kr2)}
+.food-badge.jp{background:rgba(74,158,232,.12);color:var(--jp2)}
+
+/* ── TRAIN ─────────────────────────────────────────── */
+.train-card{background:var(--s1);border:1px solid var(--b1);
+  border-radius:var(--rr);padding:15px 16px;margin-bottom:10px}
+.tr-route{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.tr-stn{font-size:14px;font-weight:500}
+.tr-arrow{color:var(--dim);font-size:13px}
+.tr-detail{font-size:11px;color:var(--dim);line-height:1.7}
+.tr-cost{font-family:var(--mono);font-size:13px;color:var(--gold);margin-top:6px}
+.cur-tag{display:inline-block;font-family:var(--mono);font-size:9px;
+  padding:1px 5px;border-radius:3px;font-weight:500;margin-left:4px;vertical-align:middle}
+.cur-tag.jpy{background:rgba(74,158,232,.14);color:var(--jp2)}
+.cur-tag.won{background:rgba(232,115,74,.14);color:var(--kr2)}
+.cur-tag.ntd{background:rgba(201,168,108,.14);color:var(--gold2)}
+
+/* ── FAB ─────────────────────────────────────────── */
+.fab{position:fixed;bottom:26px;right:22px;z-index:30;
+  width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--kr),var(--jp));
+  font-size:19px;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px rgba(0,0,0,.45);transition:transform .15s}
+.fab:active{transform:scale(.88)}
+.fab.spin{animation:spin .7s linear infinite}
+
+/* ── SETUP BANNER ─────────────────────────────────── */
+.setup-banner{background:rgba(201,168,108,.06);border:1px dashed rgba(201,168,108,.32);
+  border-radius:var(--r);padding:13px 14px;margin-bottom:14px;
+  font-size:12px;color:var(--gold);line-height:1.75}
+.setup-banner strong{display:block;font-size:13px;margin-bottom:3px}
+.setup-banner code{background:rgba(255,255,255,.08);padding:1px 5px;
+  border-radius:3px;font-family:var(--mono);font-size:10.5px}
+.step-list{margin:6px 0 0 4px;list-style:none}
+.step-list li{margin-bottom:4px;display:flex;gap:6px}
+.step-list li::before{content:'→';color:var(--gold);flex-shrink:0}
+
+@keyframes fadeup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.panel.on > *{animation:fadeup .28s ease both}
+</style>
+</head>
+<body>
+<div class="mesh"></div>
+<div class="grid-lines"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="pill-row">
+    <span class="pill pill-kr">🇰🇷 首爾</span>
+    <span class="pill pill-jp">🇯🇵 福岡・九州</span>
+  </div>
+  <h1>Seoul <em>+</em> Fukuoka<br>2026</h1>
+  <div class="sub">
+    <span>7月11日出發</span><span class="sub-dot"></span>
+    <span>7月19日返台</span><span class="sub-dot"></span>
+    <span>9天</span>
+  </div>
+  <div class="sync-info" id="syncInfo">⏳ 讀取中…</div>
+</header>
+
+<!-- WEATHER -->
+<div class="wx-row">
+  <div class="wx kr">
+    <div class="wx-icon" id="wi-kr">⛅</div>
+    <div>
+      <div class="wx-city">Seoul</div>
+      <div class="wx-temp" id="wt-kr">--°</div>
+      <div class="wx-desc" id="wd-kr">讀取中</div>
+    </div>
+  </div>
+  <div class="wx jp">
+    <div class="wx-icon" id="wi-jp">⛅</div>
+    <div>
+      <div class="wx-city">Fukuoka</div>
+      <div class="wx-temp" id="wt-jp">--°</div>
+      <div class="wx-desc" id="wd-jp">讀取中</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS — 對應 5 個頁籤 -->
+<div class="tabs">
+  <button class="tab on"  onclick="go('flight',this)"><span class="ti">✈️</span>飛機</button>
+  <button class="tab"     onclick="go('hotel',this)"><span class="ti">🏨</span>住宿</button>
+  <button class="tab"     onclick="go('sched',this)"><span class="ti">🗺</span>行程</button>
+  <button class="tab"     onclick="go('food',this)"><span class="ti">🍜</span>食</button>
+  <button class="tab"     onclick="go('train',this)"><span class="ti">🚃</span>火車</button>
+</div>
+
+<!-- PANELS -->
+<div class="panels">
+
+  <!-- ✈️ 飛機 -->
+  <div class="panel on" id="panel-flight">
+    <div id="flight-content">
+      <div class="loading"><div class="spinner"></div>讀取航班資料…</div>
+    </div>
+  </div>
+
+  <!-- 🏨 住宿 -->
+  <div class="panel" id="panel-hotel">
+    <div id="hotel-content">
+      <div class="loading"><div class="spinner"></div>讀取住宿資料…</div>
+    </div>
+  </div>
+
+  <!-- 🗺 行程 -->
+  <div class="panel" id="panel-sched">
+    <div id="sched-content">
+      <div class="loading"><div class="spinner"></div>讀取行程資料…</div>
+    </div>
+  </div>
+
+  <!-- 🍜 食 -->
+  <div class="panel" id="panel-food">
+    <div id="food-content">
+      <div class="loading"><div class="spinner"></div>讀取美食資料…</div>
+    </div>
+  </div>
+
+  <!-- 🚃 火車 -->
+  <div class="panel" id="panel-train">
+    <div id="train-content">
+      <div class="loading"><div class="spinner"></div>讀取交通資料…</div>
+    </div>
+  </div>
+
+</div>
+
+<button class="fab" id="fab" onclick="syncAll()" title="重新同步">↻</button>
+
+<script>
+/* ══════════════════════════════════════════════
+   設定區 — 只需改這裡
+══════════════════════════════════════════════ */
+const SHEET_ID = '1zGg0PWmEts0EGzBANZOEVV2437I-OXTHvzlDquMO_VA';
+// 頁籤名稱對應（與你 Google Sheet 頁籤完全一致）
+const TABS = {
+  flight: '飛機',
+  hotel:  '住宿',
+  sched:  '行程',
+  food:   '食',
+  train:  '火車'
+};
+
+/* ══════════════════════════════════════════════
+   CSV 讀取（不需 API Key，只要試算表設公開）
+══════════════════════════════════════════════ */
+async function fetchTab(tabName) {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=${encodeURIComponent(tabName)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  return parseCSV(text);
+}
+
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.split('\n');
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    cols.push(cur.trim());
+    rows.push(cols);
+  }
+  return rows;
+}
+
+/* ══════════════════════════════════════════════
+   ✈️ 飛機頁籤渲染
+   欄位：航班號碼、日期、起飛時間、起飛地點、起飛航廈、抵達時間、抵達地點、航空公司參考編號、備註
+══════════════════════════════════════════════ */
+const AIRLINE_MAP = {
+  'IT':'台灣虎航', 'LJ':'濟州航空', 'CI':'中華航空',
+  'KE':'大韓航空', 'OZ':'韓亞航空', 'JL':'日本航空', 'NH':'全日空'
+};
+function airlineName(code) {
+  const prefix = code ? code.slice(0,2) : '';
+  return AIRLINE_MAP[prefix] || code || '';
+}
+function flightType(from, to) {
+  if (['KHH','TPE','TSA'].includes(from)) return 'depart';
+  if (['KHH','TPE','TSA'].includes(to))   return 'return-f';
+  return 'arrive';
+}
+function renderFlights(rows) {
+  // 找 header row（包含 "航班號碼"）
+  let dataStart = 0;
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].some(c => c.includes('航班'))) { dataStart = i + 1; break; }
+  }
+  const flights = rows.slice(dataStart).filter(r => r[0] && r[0].trim());
+  if (!flights.length) return setupBanner('飛機');
+
+  let html = '';
+  for (const r of flights) {
+    const [num, date, depTime, depApt, depTerm, arrTime, arrApt, ref, remark] = r;
+    const type = flightType(depApt, arrApt);
+    const airline = airlineName(num);
+    const fmt = (d) => d ? d.replace('2026/','').replace('2026-','') : '';
+    html += `
+    <div class="flight-card ${type}">
+      <div class="fl-top">
+        <div class="fl-num">${num||''}${airline?`<span class="fl-airline">${airline}</span>`:''}</div>
+        <div class="fl-date">${fmt(date)}</div>
+      </div>
+      <div class="fl-route">
+        <div class="fl-airport">
+          <div class="fl-iata">${depApt||''}</div>
+          <div class="fl-time">${depTime||''}</div>
+          ${depTerm?`<div class="fl-terminal">T${depTerm}</div>`:''}
+        </div>
+        <div class="fl-arrow">
+          <div class="fl-plane">✈</div>
+          <div class="fl-line"></div>
+        </div>
+        <div class="fl-airport">
+          <div class="fl-iata">${arrApt||''}</div>
+          <div class="fl-time">${arrTime||''}</div>
+        </div>
+      </div>
+      ${ref?`<div style="margin-top:8px"><span class="fl-ref"><span class="fl-ref-label">訂位代號</span>${ref}</span></div>`:''}
+      ${remark?`<div class="fl-remark">${remark}</div>`:''}
+    </div>`;
+  }
+  return html;
+}
+
+/* ══════════════════════════════════════════════
+   🏨 住宿頁籤渲染（自動偵測欄位）
+══════════════════════════════════════════════ */
+function renderHotels(rows) {
+  const dataRows = rows.filter(r => r.some(c => c && c.trim()));
+  if (dataRows.length < 2) return setupBanner('住宿');
+
+  // 找 header
+  let hdrIdx = 0;
+  for (let i = 0; i < dataRows.length; i++) {
+    if (dataRows[i].some(c => /飯店|酒店|hotel|入住|check/i.test(c))) { hdrIdx = i; break; }
+  }
+  const hdr = dataRows[hdrIdx].map(c => c.toLowerCase());
+  const find = (...keys) => {
+    for (const k of keys) {
+      const i = hdr.findIndex(h => h.includes(k));
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
+  const iName   = find('飯店','酒店','hotel','名稱','name');
+  const iCity   = find('城市','city','地點','location');
+  const iIn     = find('入住','check in','checkin');
+  const iOut    = find('退房','check out','checkout');
+  const iRoom   = find('房型','房間','room');
+  const iNote   = find('備註','note','remark','說明');
+  const iRef    = find('訂單','訂位','booking','ref','編號');
+
+  const hotels = dataRows.slice(hdrIdx + 1).filter(r => {
+    const name = iName >= 0 ? r[iName] : r[0];
+    return name && name.trim();
+  });
+  if (!hotels.length) return setupBanner('住宿');
+
+  let html = '';
+  let lastCity = null;
+  for (const r of hotels) {
+    const name   = iName  >= 0 ? r[iName]  : r[0] || '';
+    const city   = iCity  >= 0 ? r[iCity]  : '';
+    const cin    = iIn    >= 0 ? r[iIn]    : '';
+    const cout   = iOut   >= 0 ? r[iOut]   : '';
+    const room   = iRoom  >= 0 ? r[iRoom]  : '';
+    const note   = iNote  >= 0 ? r[iNote]  : '';
+    const ref    = iRef   >= 0 ? r[iRef]   : '';
+    const isKR   = /seoul|首爾|韓|korea|kr|novotel|롯데/i.test(name+city);
+    const cls    = isKR ? 'kr' : 'jp';
+    const flag   = isKR ? '🇰🇷' : '🇯🇵';
+
+    if (city && city !== lastCity) {
+      html += `<div class="sec">${flag} ${city}</div>`;
+      lastCity = city;
+    }
+
+    html += `
+    <div class="hotel-card">
+      <span class="hc-badge ${cls}">${flag} ${city||'住宿'}</span>
+      <div class="hc-name">${name}</div>
+      <div class="hc-grid">
+        ${cin  ? `<div class="hc-field"><div class="lbl">入住</div><div class="val">${cin}</div></div>`  : ''}
+        ${cout ? `<div class="hc-field"><div class="lbl">退房</div><div class="val">${cout}</div></div>` : ''}
+        ${room ? `<div class="hc-field"><div class="lbl">房型</div><div class="val">${room}</div></div>` : ''}
+        ${ref  ? `<div class="hc-field"><div class="lbl">訂單號</div><div class="val" style="font-family:var(--mono);font-size:12px">${ref}</div></div>` : ''}
+      </div>
+      ${note ? `<div class="hc-remark">💬 ${note}</div>` : ''}
+    </div>`;
+  }
+  return html;
+}
+
+/* ══════════════════════════════════════════════
+   🗺 行程頁籤渲染
+══════════════════════════════════════════════ */
+function renderSched(rows) {
+  const dataRows = rows.filter(r => r.some(c => c && c.trim()));
+  if (dataRows.length < 2) return setupBanner('行程');
+
+  let hdrIdx = 0;
+  for (let i = 0; i < dataRows.length; i++) {
+    if (dataRows[i].some(c => /日期|date|時間|地點|行程|day/i.test(c))) { hdrIdx = i; break; }
+  }
+  const hdr = dataRows[hdrIdx].map(c => c.toLowerCase());
+  const find = (...keys) => { for (const k of keys) { const i = hdr.findIndex(h => h.includes(k)); if (i>=0) return i; } return -1; };
+
+  const iDate  = find('日期','date','day');
+  const iTime  = find('時間','time');
+  const iPlace = find('地點','place','景點','item','行程','名稱');
+  const iNote  = find('備註','note','remark','說明','detail');
+
+  const items = dataRows.slice(hdrIdx+1).filter(r => r.some(c => c && c.trim()));
+  if (!items.length) return setupBanner('行程');
+
+  // Group by date
+  const byDate = {};
+  const dateOrder = [];
+  for (const r of items) {
+    const date  = iDate  >= 0 ? r[iDate]  : r[0] || '';
+    const time  = iTime  >= 0 ? r[iTime]  : '';
+    const place = iPlace >= 0 ? r[iPlace] : (iDate>=0 ? r[iDate+1] : r[1]) || '';
+    const note  = iNote  >= 0 ? r[iNote]  : '';
+    if (!date && !place) continue;
+    const key = date || '未指定日期';
+    if (!byDate[key]) { byDate[key] = []; dateOrder.push(key); }
+    byDate[key].push({ time, place, note });
+  }
+
+  if (!dateOrder.length) return setupBanner('行程');
+
+  let html = '';
+  dateOrder.forEach((date, idx) => {
+    const events = byDate[date];
+    const dayNum = String(idx+1).padStart(2,'0');
+    html += `
+    <div class="day-block">
+      <div class="day-hdr closed" onclick="toggleDay(this)">
+        <div class="day-badge">${dayNum}</div>
+        <div class="day-info">
+          <div class="day-title">${events[0]?.place || date}</div>
+          <div class="day-date">${date}</div>
+        </div>
+        <div class="day-chev">⌄</div>
+      </div>
+      <div class="day-body" style="display:none">
+        <div class="tl">`;
+    for (const ev of events) {
+      html += `
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div>
+              ${ev.time?`<div class="tl-time">${ev.time}</div>`:''}
+              <div class="tl-place">${ev.place}</div>
+              ${ev.note?`<div class="tl-note">${ev.note}</div>`:''}
+            </div>
+          </div>`;
+    }
+    html += `</div></div></div>`;
+  });
+  return html;
+}
+
+/* ══════════════════════════════════════════════
+   🍜 食頁籤渲染
+══════════════════════════════════════════════ */
+const FOOD_ICONS = {
+  '早餐':'🌅','午餐':'☀️','晚餐':'🌙','宵夜':'🌃',
+  '咖啡':'☕','甜點':'🍰','燒肉':'🥩','壽司':'🍣','拉麵':'🍜',
+  '韓式':'🇰🇷','日式':'🇯🇵','炸雞':'🍗','泡菜':'🥬','海鮮':'🦐'
+};
+function foodIcon(name, note) {
+  const txt = (name+note).toLowerCase();
+  for (const [k,v] of Object.entries(FOOD_ICONS)) if (txt.includes(k)) return v;
+  return '🍽';
+}
+
+function renderFood(rows) {
+  const dataRows = rows.filter(r => r.some(c => c && c.trim()));
+  if (dataRows.length < 2) return setupBanner('食');
+
+  let hdrIdx = 0;
+  for (let i = 0; i < dataRows.length; i++) {
+    if (dataRows[i].some(c => /名稱|餐廳|restaurant|store|店|food|meal/i.test(c))) { hdrIdx = i; break; }
+  }
+  const hdr = dataRows[hdrIdx].map(c => c.toLowerCase());
+  const find = (...keys) => { for (const k of keys) { const i = hdr.findIndex(h => h.includes(k)); if (i>=0) return i; } return -1; };
+
+  const iName = find('名稱','餐廳','restaurant','store','店');
+  const iCity = find('城市','city','地點','location');
+  const iCat  = find('類型','category','meal','類別','早午晚');
+  const iNote = find('備註','note','remark','說明');
+  const iAddr = find('地址','address');
+
+  const foods = dataRows.slice(hdrIdx+1).filter(r => {
+    const n = iName >= 0 ? r[iName] : r[0];
+    return n && n.trim();
+  });
+  if (!foods.length) return setupBanner('食');
+
+  let html = '<div class="food-card">';
+  for (const r of foods) {
+    const name = iName >= 0 ? r[iName] : r[0] || '';
+    const city = iCity >= 0 ? r[iCity] : '';
+    const cat  = iCat  >= 0 ? r[iCat]  : '';
+    const note = iNote >= 0 ? r[iNote] : '';
+    const addr = iAddr >= 0 ? r[iAddr] : '';
+    const isKR = /seoul|首爾|韓|korea/i.test(name+city+note);
+    const icon = foodIcon(name, cat+note);
+    html += `
+      <div class="food-item">
+        <div class="food-icon">${icon}</div>
+        <div class="food-body">
+          <div class="food-name">${name}${isKR?'<span class="food-badge kr">首爾</span>':'<span class="food-badge jp">九州</span>'}</div>
+          <div class="food-meta">${cat||''}${addr?' · '+addr:''}${note?' · '+note:''}</div>
+        </div>
+      </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+/* ══════════════════════════════════════════════
+   🚃 火車頁籤渲染
+══════════════════════════════════════════════ */
+function renderTrain(rows) {
+  const dataRows = rows.filter(r => r.some(c => c && c.trim()));
+  if (dataRows.length < 2) return setupBanner('火車');
+
+  let hdrIdx = 0;
+  for (let i = 0; i < dataRows.length; i++) {
+    if (dataRows[i].some(c => /出發|from|站|train|交通|起點/i.test(c))) { hdrIdx = i; break; }
+  }
+  const hdr = dataRows[hdrIdx].map(c => c.toLowerCase());
+  const find = (...keys) => { for (const k of keys) { const i = hdr.findIndex(h => h.includes(k)); if (i>=0) return i; } return -1; };
+
+  const iFrom = find('出發','from','起點','起站','乘車','departure');
+  const iTo   = find('抵達','to','終點','終站','arrival');
+  const iTime = find('時間','time','日期','date');
+  const iNote = find('備註','note','remark','說明');
+  const iCost = find('費用','cost','price','票價','金額');
+  const iType = find('類型','type','交通方式','方式');
+
+  const trains = dataRows.slice(hdrIdx+1).filter(r => {
+    const f = iFrom >= 0 ? r[iFrom] : r[0];
+    return f && f.trim();
+  });
+  if (!trains.length) return setupBanner('火車');
+
+  let html = '';
+  let lastSec = null;
+  for (const r of trains) {
+    const from = iFrom >= 0 ? r[iFrom] : r[0] || '';
+    const to   = iTo   >= 0 ? r[iTo]   : r[1] || '';
+    const time = iTime >= 0 ? r[iTime] : '';
+    const note = iNote >= 0 ? r[iNote] : '';
+    const cost = iCost >= 0 ? r[iCost] : '';
+    const type = iType >= 0 ? r[iType] : '';
+    const isKR = /seoul|首爾|韓|korea|ktx|korail|지하철/i.test(from+to+note+type);
+    const secTitle = isKR ? '🇰🇷 首爾交通' : '🇯🇵 九州交通';
+    if (secTitle !== lastSec) { html += `<div class="sec">${secTitle}</div>`; lastSec = secTitle; }
+
+    html += `
+    <div class="train-card">
+      <div class="tr-route">
+        <span class="tr-stn">${from}</span>
+        <span class="tr-arrow">→</span>
+        <span class="tr-stn">${to}</span>
+      </div>
+      <div class="tr-detail">${type||''}${time?' · '+time:''}${note?' · '+note:''}</div>
+      ${cost?`<div class="tr-cost">${cost}</div>`:''}
+    </div>`;
+  }
+  return html;
+}
+
+/* ══════════════════════════════════════════════
+   Setup banner — 當資料尚未公開
+══════════════════════════════════════════════ */
+function setupBanner(tab) {
+  return `
+  <div class="setup-banner">
+    <strong>📋 「${tab}」頁籤尚未讀到資料</strong>
+    請確認試算表已設為公開：
+    <ul class="step-list">
+      <li>打開 Google Sheet → 右上角「共用」</li>
+      <li>「一般存取權」改為「知道連結的人」→「檢視者」</li>
+      <li>儲存後，點右下角 ↻ 重新同步</li>
+    </ul>
+    Sheet ID：<code>${SHEET_ID}</code>
+  </div>
+  ${fallbackContent(tab)}`;
+}
+
+/* ══════════════════════════════════════════════
+   Fallback：已知資料（從畫面讀到的飛機資料）
+══════════════════════════════════════════════ */
+function fallbackContent(tab) {
+  if (tab !== '飛機') return '';
+  // 已從頁面讀到的飛機資料
+  const known = [
+    { num:'IT662', date:'7/11', dep:'15:55', from:'KHH', term:'', arr:'19:45', to:'GMP', ref:'', remark:'', type:'depart' },
+    { num:'LJ271', date:'7/13', dep:'17:00', from:'ICN', term:'2',  arr:'18:30', to:'FUK', ref:'U3Q78Q', remark:'', type:'arrive' },
+    { num:'CI199', date:'7/19', dep:'13:30', from:'KMJ', term:'',  arr:'15:10', to:'KHH', ref:'B8OZCI', remark:'已辦理 auto check-in', type:'return-f' },
+  ];
+  return known.map(f => `
+    <div class="flight-card ${f.type}">
+      <div class="fl-top">
+        <div class="fl-num">${f.num}<span class="fl-airline">${airlineName(f.num)}</span></div>
+        <div class="fl-date">${f.date}</div>
+      </div>
+      <div class="fl-route">
+        <div class="fl-airport">
+          <div class="fl-iata">${f.from}</div>
+          <div class="fl-time">${f.dep}</div>
+          ${f.term?`<div class="fl-terminal">T${f.term}</div>`:''}
+        </div>
+        <div class="fl-arrow"><div class="fl-plane">✈</div><div class="fl-line"></div></div>
+        <div class="fl-airport">
+          <div class="fl-iata">${f.to}</div>
+          <div class="fl-time">${f.arr}</div>
+        </div>
+      </div>
+      ${f.ref?`<div style="margin-top:8px"><span class="fl-ref"><span class="fl-ref-label">訂位代號</span>${f.ref}</span></div>`:''}
+      ${f.remark?`<div class="fl-remark">${f.remark}</div>`:''}
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════════════
+   天氣
+══════════════════════════════════════════════ */
+function wIcon(c){
+  if(c>=95)return['⛈','雷雨'];if(c>=80)return['🌦','陣雨'];
+  if(c>=61)return['🌧','降雨'];if(c>=51)return['🌦','毛毛雨'];
+  if(c>=45)return['🌫','霧'];if(c>=3)return['☁️','多雲'];
+  if(c>=1)return['⛅','少雲'];return['☀️','晴天'];
+}
+async function fetchWx(lat,lon,ids){
+  try{
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`);
+    const d=await r.json();const[icon,desc]=wIcon(d.current.weather_code);
+    document.getElementById(ids[0]).textContent=icon;
+    document.getElementById(ids[1]).textContent=Math.round(d.current.temperature_2m)+'°';
+    document.getElementById(ids[2]).textContent=desc;
+  }catch{document.getElementById(ids[2]).textContent='無法取得';}
+}
+
+/* ══════════════════════════════════════════════
+   主要同步
+══════════════════════════════════════════════ */
+const RENDERERS = {
+  flight: renderFlights,
+  hotel:  renderHotels,
+  sched:  renderSched,
+  food:   renderFood,
+  train:  renderTrain
+};
+
+async function loadTab(key) {
+  const el = document.getElementById(`${key}-content`);
+  try {
+    const rows = await fetchTab(TABS[key]);
+    const html = RENDERERS[key](rows);
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = setupBanner(TABS[key]);
+  }
+}
+
+async function syncAll() {
+  const fab = document.getElementById('fab');
+  fab.classList.add('spin');
+  document.getElementById('syncInfo').textContent = '⏳ 同步中…';
+  await Promise.all([
+    fetchWx(37.5665, 126.9780, ['wi-kr','wt-kr','wd-kr']),
+    fetchWx(33.5904, 130.4017, ['wi-jp','wt-jp','wd-jp']),
+    loadTab('flight'),
+    loadTab('hotel'),
+    loadTab('sched'),
+    loadTab('food'),
+    loadTab('train'),
+  ]);
+  const now = new Date();
+  document.getElementById('syncInfo').textContent =
+    `✓ 同步完成 ${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  setTimeout(() => fab.classList.remove('spin'), 600);
+}
+
+/* ══════════════════════════════════════════════
+   UI
+══════════════════════════════════════════════ */
+function go(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('panel-'+name).classList.add('on');
+  btn.classList.add('on');
+}
+function toggleDay(hdr) {
+  const body = hdr.nextElementSibling;
+  const open = hdr.classList.toggle('open');
+  hdr.classList.toggle('closed', !open);
+  body.style.display = open ? 'block' : 'none';
+}
+
+// Init
+syncAll();
+setInterval(() => {
+  fetchWx(37.5665,126.9780,['wi-kr','wt-kr','wd-kr']);
+  fetchWx(33.5904,130.4017,['wi-jp','wt-jp','wd-jp']);
+}, 15*60*1000);
+</script>
+</body>
+</html>
