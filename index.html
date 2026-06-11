@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seoul & Fukuoka 2026 Trip</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; background-color: #f4f4f9; }
+        h1 { text-align: center; color: #333; }
+        h2 { color: #444; border-bottom: 2px solid #ddd; padding-bottom: 5px; margin-top: 30px;}
+        details { background: #fff; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; }
+        summary { padding: 15px; font-weight: bold; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+        summary::-webkit-details-marker { display: none; }
+        .content { padding: 15px; border-top: 1px solid #eee; background: #fafafa; font-size: 0.95em; color: #555; }
+        .info-row { margin-bottom: 8px; line-height: 1.4; }
+        a.map-link { color: #1a73e8; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; }
+        a.map-link:hover { text-decoration: underline; }
+        .tag { background: #e0f2f1; color: #00796b; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; margin-right: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>首爾 & 福岡 行程表</h1>
+    
+    <h2>✈️ 飛機</h2>
+    <div id="flights-container"></div>
+
+    <h2>🏨 住宿</h2>
+    <div id="hotels-container"></div>
+
+    <h2>📅 行程</h2>
+    <div id="itinerary-container"></div>
+
+    <h2>🍽️ 食</h2>
+    <div id="food-container"></div>
+
+    <script>
+        // --- 讀取的 Google Sheet 資料 ---
+        const flights = [
+            { no: "IT662", date: "2026/07/11", depTime: "15:55", depLoc: "KHH", arrTime: "19:45", arrLoc: "GMP", terminal: "", ref: "", note: "" },
+            { no: "LJ271", date: "2026/07/13", depTime: "17:00", depLoc: "ICN", arrTime: "18:30", arrLoc: "FUK", terminal: "2", ref: "U3Q78Q", note: "" },
+            { no: "CI199", date: "2026/07/19", depTime: "13:30", depLoc: "KMJ", arrTime: "15:10", arrLoc: "KHH", terminal: "", ref: "B8OZCI", note: "已辦理auto check-inj" }
+        ];
+
+        const hotels = [
+            { in: "2026/07/11", out: "2026/07/13", name: "諾富特大使首爾東大門", fullName: "Novotel Ambassador Seoul Dongdaemun Hotels & Residences", room: "Superior Room - 1 double bed & 1 single bed", bf: "hotel", ref: "QCHSDZNZ" },
+            { in: "2026/07/11", out: "2026/07/13", name: "諾富特大使首爾東大門", fullName: "Novotel Ambassador Seoul Dongdaemun Hotels & Residences", room: "Standard Room - 1 double bed", bf: "hotel", ref: "QCHSDZJH" },
+            { in: "2026/07/13", out: "2026/07/16", name: "福岡全日空皇冠假日酒店", fullName: "ANA Crowne Plaza Fukuoka", room: "2 Single Standard", bf: "Dacomecca", ref: "61351164" },
+            { in: "2026/07/13", out: "2026/07/16", name: "福岡全日空皇冠假日酒店", fullName: "ANA Crowne Plaza Fukuoka", room: "2 Single Standard", bf: "另外預定餐廳", ref: "66378505" },
+            { in: "2026/07/16", out: "2026/07/18", name: "別府灣美爵溫泉度假酒店", fullName: "Grand Mercure Beppu Bay Resort & Spa", room: "Standard Room with 2 single beds, 1 Extra beds", bf: "hotel", ref: "QCHPBMWC" },
+            { in: "2026/07/16", out: "2026/07/18", name: "別府灣美爵溫泉度假酒店", fullName: "Grand Mercure Beppu Bay Resort & Spa", room: "Classic Room, Japanese style, 4 futon beds", bf: "hotel", ref: "QCHPBNDD" },
+            { in: "2026/07/18", out: "2026/07/19", name: "Premier阿蘇熊本空港", fullName: "SUPER HOTEL PREMIER ASO KUMAMOTO AIRPORT", room: "Double Room(with Breakfast) NoSmoking", bf: "hotel", ref: "2026-1422124" },
+            { in: "2026/07/18", out: "2026/07/19", name: "Premier阿蘇熊本空港", fullName: "SUPER HOTEL PREMIER ASO KUMAMOTO AIRPORT", room: "Hollywood Twin Room", bf: "hotel", ref: "RYa0me5gvf" }
+        ];
+
+        const itinerary = [
+            { date: "2026/07/11", time: "20:00", event: "東大門設計廣場", highlight: "由普立茲克建築獎得主札哈·哈蒂設計，外觀極具未來感", address: "東大門設計廣場", note: "" },
+            { date: "2026/07/12", time: "09:00", event: "景福宮 (光化門)", highlight: "10:00 準時在光化門廣場觀看「王宮守門將換崗儀式」 最具代表性的勤政殿與慶會樓", address: "景福宮", note: "景福宮內部非常大且沒有超商，水要裝滿" },
+            { date: "2026/07/12", time: "11:00", event: "國立民俗博物館", highlight: "博物館的入口就直接連通景福宮的東側", address: "國立民俗博物館", note: "" },
+            { date: "2026/07/12", time: "14:00", event: "白麟濟故居 (北村)", highlight: "", address: "白麟濟故居", note: "" },
+            { date: "2026/07/12", time: "15:00", event: "首爾工藝博物館", highlight: "", address: "首爾工藝博物館", note: "" },
+            { date: "2026/07/12", time: "17:00", event: "Onion 或倫敦貝果", highlight: "韓國爆紅的排隊咖啡", address: "Onion 或倫敦貝果", note: "" },
+            { date: "2026/07/13", time: "09:00", event: "逛街購物", highlight: "買韓國餅乾 & 人參", address: "", note: "" },
+            { date: "2026/07/14", time: "09:00", event: "Kidzania", highlight: "到下午三點，已預約", address: "Kidzania Fukuoka", note: "" },
+            { date: "2026/07/14", time: "16:00", event: "Life-Size RX-93ff ν Gundam Statue", highlight: "看鋼彈", address: "Life-Size RX-93ff ν Gundam Statue", note: "" },
+            { date: "2026/07/15", time: "09:00", event: "太宰府天滿宮", highlight: "", address: "太宰府天滿宮", note: "" },
+            { date: "2026/07/15", time: "13:00", event: "九州國立博物館", highlight: "", address: "九州國立博物館", note: "" }
+        ];
+
+        const foods = [
+            { date: "2026/07/11", type: "點心", name: "BHC炸雞 東大門店", localName: "BHC동대문점", address: "南韓 Seoul, Jung District, Eulji-ro 44-gil, 10 2층", note: "" },
+            { date: "2026/07/12", type: "午餐", name: "土俗村人蔘雞湯", localName: "토속촌 삼계탕", address: "토속촌 삼계탕", note: "逛完景福宮後，從西側的「迎秋門」走出去，步行約 5 分鐘就能抵達。招牌人蔘雞湯、海鮮蔥煎餅" },
+            { date: "2026/07/14", type: "早餐", name: "Dacomecca", localName: "Dacomecca", address: "日本〒812-0011 Fukuoka, Hakata Ward, Hakata Ekimae, 4 Chome−14−1", note: "" },
+            { date: "2026/07/15", type: "早餐", name: "Shokudou Owan", localName: "食堂 おわん", address: "日本〒812-0039 Fukuoka, Hakata Ward, Reisenmachi, 9−20 1F", note: "已預約" }
+        ];
+
+        // 產生 Google Map App 導航網址
+        function getMapLink(query) {
+            if(!query) return '';
+            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+        }
+
+        function renderFlights() {
+            const container = document.getElementById('flights-container');
+            flights.forEach(f => {
+                container.innerHTML += `
+                    <details>
+                        <summary>
+                            <span><span class="tag">${f.date}</span> ${f.no}</span>
+                            <span>${f.depLoc} ✈️ ${f.arrLoc}</span>
+                        </summary>
+                        <div class="content">
+                            <div class="info-row"><b>日期:</b> ${f.date}</div>
+                            <div class="info-row"><b>起飛:</b> ${f.depTime} (${f.depLoc}) ${f.terminal ? '航廈:'+f.terminal : ''}</div>
+                            <div class="info-row"><b>抵達:</b> ${f.arrTime} (${f.arrLoc})</div>
+                            <div class="info-row"><b>預約代號:</b> ${f.ref || '無'}</div>
+                            ${f.note ? `<div class="info-row"><b>備註:</b> ${f.note}</div>` : ''}
+                        </div>
+                    </details>
+                `;
+            });
+        }
+
+        function renderHotels() {
+            const container = document.getElementById('hotels-container');
+            hotels.forEach(h => {
+                const mapUrl = getMapLink(h.fullName);
+                container.innerHTML += `
+                    <details>
+                        <summary>
+                            <div><b>${h.name}</b><br><span style="font-size:0.8em; color:#777; font-weight:normal;">${h.in} ~ ${h.out}</span></div>
+                            <div style="font-size:0.9em;">早餐: ${h.bf}</div>
+                        </summary>
+                        <div class="content">
+                            <div class="info-row"><b>飯店名稱:</b> <a href="${mapUrl}" class="map-link" target="_blank">${h.fullName} 🗺️</a></div>
+                            <div class="info-row"><b>房型:</b> ${h.room}</div>
+                            <div class="info-row"><b>預約號碼:</b> ${h.ref}</div>
+                        </div>
+                    </details>
+                `;
+            });
+        }
+
+        function renderItinerary() {
+            const container = document.getElementById('itinerary-container');
+            const today = new Date();
+            const thresholdDate = new Date('2026-07-11T00:00:00');
+            
+            // 轉換今天日期為 YYYY/MM/DD 格式
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const todayStr = `${yyyy}/${mm}/${dd}`;
+
+            let filteredItinerary = itinerary;
+
+            // 7/11之前顯示全部，7/11開始只列當天行程
+            if (today >= thresholdDate) {
+                filteredItinerary = itinerary.filter(i => i.date === todayStr);
+            }
+
+            if (filteredItinerary.length === 0) {
+                container.innerHTML = "<p style='text-align:center; color:#888;'>今日無行程安排。</p>";
+                return;
+            }
+
+            filteredItinerary.forEach(i => {
+                const mapUrl = getMapLink(i.address || i.event);
+                container.innerHTML += `
+                    <details>
+                        <summary>
+                            <span><span class="tag">${i.time}</span> ${i.event}</span>
+                            ${today < thresholdDate ? `<span style="font-size:0.8em; color:#777;">${i.date}</span>` : ''}
+                        </summary>
+                        <div class="content">
+                            ${i.highlight ? `<div class="info-row"><b>重點:</b> ${i.highlight}</div>` : ''}
+                            ${i.address ? `<div class="info-row"><b>地址:</b> <a href="${mapUrl}" class="map-link" target="_blank">${i.address} 🗺️</a></div>` : ''}
+                            ${i.note ? `<div class="info-row"><b>備註:</b> ${i.note}</div>` : ''}
+                        </div>
+                    </details>
+                `;
+            });
+        }
+
+        function renderFood() {
+            const container = document.getElementById('food-container');
+            const today = new Date();
+            
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const todayStr = `${yyyy}/${mm}/${dd}`;
+
+            // 食的部分嚴格只列出當天的行程
+            const filteredFoods = foods.filter(f => f.date === todayStr);
+
+            if (filteredFoods.length === 0) {
+                container.innerHTML = "<p style='text-align:center; color:#888;'>今日無餐廳安排。</p>";
+                return;
+            }
+
+            filteredFoods.forEach(f => {
+                const mapUrl = getMapLink(f.address || f.localName || f.name);
+                container.innerHTML += `
+                    <details>
+                        <summary>
+                            <span><span class="tag">${f.type}</span> ${f.name}</span>
+                        </summary>
+                        <div class="content">
+                            <div class="info-row"><b>當地名稱:</b> ${f.localName}</div>
+                            ${f.address ? `<div class="info-row"><b>地址:</b> <a href="${mapUrl}" class="map-link" target="_blank">${f.address} 🗺️</a></div>` : ''}
+                            ${f.note ? `<div class="info-row"><b>備註:</b> ${f.note}</div>` : ''}
+                        </div>
+                    </details>
+                `;
+            });
+        }
+
+        // 執行渲染
+        renderFlights();
+        renderHotels();
+        renderItinerary();
+        renderFood();
+    </script>
+</body>
+</html>
