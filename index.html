@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Seoul & Fukuoka 2026</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b111e;
+            --card-bg: #151c2b;
+            --text-main: #f0f6fc;
+            --text-sub: #8b949e;
+            --accent: #58a6ff;
+            --border: #30363d;
+            --naver-green: #03c75a;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #offline-banner {
+            display: none; background-color: #b91c1c; color: white; 
+            text-align: center; padding: 8px; font-size: 0.85rem; font-weight: bold;
+        }
+
+        header { text-align: center; padding: 30px 20px 20px; }
+        .kr-jp { font-size: 1rem; color: var(--text-main); font-weight: bold; letter-spacing: 2px; }
+        .title-city { font-size: 2.5rem; font-weight: 800; margin: 10px 0; color: var(--text-main); display: flex; justify-content: center; gap: 20px; }
+        .title-city span:last-child { color: #8bb4f7; }
+        .trip-dates { font-size: 0.9rem; color: var(--text-sub); }
+        
+        .weather-widget { 
+            display: inline-flex; justify-content: center; align-items: center; gap: 10px; 
+            margin-top: 20px; padding: 10px 20px; border-radius: 20px;
+            background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.3);
+            text-decoration: none; color: var(--text-main); transition: all 0.3s;
+        }
+        .weather-icon { font-size: 1.8rem; }
+        .weather-temp { font-size: 1.2rem; font-weight: bold; display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2;}
+        .weather-city { font-size: 0.75rem; color: var(--accent); font-weight: normal; }
+
+        .tabs { 
+            display: flex; border-bottom: 1px solid var(--border); 
+            background-color: rgba(21, 28, 43, 0.5); overflow-x: auto; scrollbar-width: none;
+        }
+        .tabs::-webkit-scrollbar { display: none; }
+        
+        .tab-btn {
+            flex: 1; min-width: 70px; text-align: center; background: none; border: none; color: var(--text-sub);
+            padding: 15px 10px; font-size: 0.95rem; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap;
+        }
+        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); font-weight: bold; }
+
+        .tab-content { display: none; padding: 20px; max-width: 600px; margin: 0 auto; min-height: 50vh; }
+        .tab-content.active { display: block; }
+
+        details { background: var(--card-bg); margin-bottom: 15px; border-radius: 10px; border: 1px solid var(--border); overflow: hidden; }
+        summary { padding: 16px; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: '▼'; font-size: 0.8em; color: var(--text-sub); transition: transform 0.3s; }
+        details[open] summary::after { transform: rotate(180deg); }
+        
+        .content-inner { padding: 15px 16px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.2); font-size: 0.9em; color: #c9d1d9; }
+        .info-row { margin-bottom: 10px; word-break: break-all; }
+        
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+        a.map-link { color: var(--bg-color); background: var(--accent); padding: 5px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; font-size: 0.85em; }
+        a.naver-link { background: var(--naver-green); color: white; }
+        button.copy-btn { background: #30363d; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 0.85em; }
+        
+        .tag { background: rgba(88, 166, 255, 0.15); color: var(--accent); padding: 2px 8px; border-radius: 12px; font-size: 0.85em; margin-right: 10px; }
+        .sub-text { font-size: 0.85em; color: var(--text-sub); display: block; margin-top: 4px; }
+        
+        .empty-state { text-align: center; color: var(--text-sub); margin-top: 50px; }
+        .empty-state span { display: block; font-size: 0.9em; margin-top: 5px; }
+        .loading { text-align: center; color: var(--accent); margin-top: 50px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="offline-banner">✈️ 目前處於離線模式，顯示上次備份資料</div>
+
+    <header>
+        <div class="kr-jp">KR JP</div>
+        <div class="title-city"><span>Seoul</span> <span>Fukuoka</span></div>
+        <div class="trip-dates">2026 • 7月11日 → 7月19日 • 9天</div>
+        
+        <a id="weather-link" class="weather-widget" href="https://www.google.com/search?q=首爾天氣" target="_blank">
+            <span class="weather-icon" id="weather-icon">⏳</span>
+            <div class="weather-temp">
+                <span id="weather-temp">載入中...</span>
+                <span class="weather-city" id="weather-city">讀取天氣</span>
+            </div>
+        </a>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="switchTab('flights')">✈️ 飛機</button>
+        <button class="tab-btn" onclick="switchTab('hotels')">🏨 住宿</button>
+        <button class="tab-btn" onclick="switchTab('itinerary')">🗺️ 行程</button>
+        <button class="tab-btn" onclick="switchTab('food')">🍜 食</button>
+        <button class="tab-btn" onclick="switchTab('transport')">🚆 交通</button>
+        <button class="tab-btn" onclick="switchTab('others')">📌 其他</button>
+    </nav>
+
+    <main>
+        <section id="flights" class="tab-content active"><div class="loading">📡 資料同步中...</div></section>
+        <section id="hotels" class="tab-content"><div class="loading">📡 資料同步中...</div></section>
+        <section id="itinerary" class="tab-content"><div class="loading">📡 資料同步中...</div></section>
+        <section id="food" class="tab-content"><div class="loading">📡 資料同步中...</div></section>
+        <section id="transport" class="tab-content"><div class="loading">📡 資料同步中...</div></section>
+        <section id="others" class="tab-content"><div class="loading">📡 資料同步中...</div></section>
+    </main>
+
+    <script>
+        const SHEET_ID = '1zGg0PWmEts0EGzBANZOEVV2437I-OXTHvzlDquMO_VA';
+
+        function getMapLink(query) {
+            if(!query) return '';
+            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+        }
+
+        function copyText(text, showMsg = true) {
+            navigator.clipboard.writeText(text).then(() => {
+                if(showMsg) alert('已複製：\n' + text);
+            }).catch(err => {
+                console.error('複製失敗', err);
+            });
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function fetchSheetData(sheetName) {
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+            return new Promise((resolve) => {
+                Papa.parse(url, {
+                    download: true, header: true, skipEmptyLines: true,
+                    complete: results => {
+                        localStorage.setItem('trip_' + sheetName, JSON.stringify(results.data));
+                        document.getElementById('offline-banner').style.display = 'none';
+                        resolve(results.data);
+                    },
+                    error: err => {
+                        console.warn(sheetName + " 讀取失敗，啟用離線資料");
+                        document.getElementById('offline-banner').style.display = 'block';
+                        const backup = localStorage.getItem('trip_' + sheetName);
+                        resolve(backup ? JSON.parse(backup) : []);
+                    }
+                });
+            });
+        }
+
+        async function loadAllData() {
+            const [flightsData, hotelsData, itineraryData, foodData, transportData, othersData] = await Promise.all([
+                fetchSheetData('飛機'), fetchSheetData('住宿'), fetchSheetData('行程'), 
+                fetchSheetData('食'), fetchSheetData('陸上交通'), fetchSheetData('其他')
+            ]);
+
+            renderFlights(flightsData);
+            renderHotels(hotelsData);
+            renderItinerary(itineraryData);
+            renderFood(foodData);
+            renderTransport(transportData);
+            renderOthers(othersData);
+        }
+
+        // ============================
+        //  各種動態渲染防錯位邏輯
+        // ============================
+
+        function filterByDateRule(dataArray) {
+            const today = new Date();
+            const thresholdDate = new Date('2026/07/11');
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const todayStr = `${yyyy}/${mm}/${dd}`;
+
+            if (today < thresholdDate) return dataArray; 
+            return dataArray.filter(item => {
+                // 自動尋找標題包含「日期」的欄位
+                const dateKey = Object.keys(item).find(k => k.includes('日期')) || Object.keys(item)[0];
+                return item[dateKey] === todayStr;
+            });
+        }
+
+        // 行程 (動態抓取所有欄位)
+        function renderItinerary(data) {
+            const container = document.getElementById('itinerary');
+            const filteredData = filterByDateRule(data);
+            if (filteredData.length === 0) { container.innerHTML = `<div class="empty-state">⚠️ 今日無行程安排</div>`; return; }
+            let html = '';
+            
+            filteredData.forEach(row => {
+                const keys = Object.keys(row);
+                // 智慧識別主要欄位 (防錯位)
+                const dateKey = keys.find(k => k.includes('日期')) || keys[0];
+                const timeKey = keys.find(k => k.includes('時間')) || keys[1];
+                const eventKey = keys.find(k => k.includes('行程')) || keys[2];
+                const addressKey = keys.find(k => k.includes('地址')) || '';
+                const koreanKey = keys.find(k => k.includes('韓文') || k.includes('當地') || k.includes('Local')) || '';
+
+                const dateVal = row[dateKey] || '';
+                const timeVal = row[timeKey] || '';
+                const eventVal = row[eventKey] || '';
+                const addressVal = addressKey ? row[addressKey] : '';
+                const koreanVal = koreanKey ? row[koreanKey] : '';
+
+                // 動態產生第二層的所有內容 (排除第一層已顯示的標題，並且略過空白內容)
+                let innerHtml = '';
+                keys.forEach(key => {
+                    const val = row[key];
+                    if (key !== dateKey && key !== timeKey && key !== eventKey && val && String(val).trim() !== '') {
+                        innerHtml += `<div class="info-row"><b>${key}:</b> ${val}</div>`;
+                    }
+                });
+
+                const mapUrl = getMapLink(addressVal || eventVal);
+                const naverSearchUrl = koreanVal ? `https://map.naver.com/v5/search/${encodeURIComponent(koreanVal)}` : '';
+                
+                html += `
+                    <details>
+                        <summary><div><span class="tag">🕒 ${timeVal}</span><span style="font-weight:bold;">${eventVal}</span><span class="sub-text">${dateVal}</span></div></summary>
+                        <div class="content-inner">
+                            ${innerHtml} <div class="btn-group">
+                                <a href="${mapUrl}" class="map-link" target="_blank">📍 Google Map</a>
+                                ${koreanVal ? `<a href="${naverSearchUrl}" class="map-link naver-link" target="_blank" onclick="copyText('${koreanVal}', false)">🟢 搜 Naver (自動複製)</a>` : ''}
+                                ${addressVal ? `<button class="copy-btn" onclick="copyText('${addressVal}')">📋 複製地址</button>` : ''}
+                            </div>
+                        </div>
+                    </details>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // 食 (動態抓取所有欄位)
+        function renderFood(data) {
+            const container = document.getElementById('food');
+            const filteredData = filterByDateRule(data);
+            if (filteredData.length === 0) { container.innerHTML = `<div class="empty-state">⚠️ 今日無餐廳安排</div>`; return; }
+            let html = '';
+
+            filteredData.forEach(row => {
+                const keys = Object.keys(row);
+                const dateKey = keys.find(k => k.includes('日期')) || keys[0];
+                const typeKey = keys.find(k => k.includes('分類')) || keys[1];
+                const nameKey = keys.find(k => k.includes('餐廳')) || keys[2];
+                const addressKey = keys.find(k => k.includes('地址')) || '';
+                const koreanKey = keys.find(k => k.includes('當地') || k.includes('Local') || k.includes('韓文')) || '';
+
+                const dateVal = row[dateKey] || '';
+                const typeVal = row[typeKey] || '';
+                const nameVal = row[nameKey] || '';
+                const addressVal = addressKey ? row[addressKey] : '';
+                const koreanVal = koreanKey ? row[koreanKey] : '';
+
+                let innerHtml = '';
+                keys.forEach(key => {
+                    const val = row[key];
+                    if (key !== dateKey && key !== typeKey && key !== nameKey && val && String(val).trim() !== '') {
+                        innerHtml += `<div class="info-row"><b>${key}:</b> ${val}</div>`;
+                    }
+                });
+
+                const mapUrl = getMapLink(addressVal || nameVal);
+                const naverSearchUrl = koreanVal ? `https://map.naver.com/v5/search/${encodeURIComponent(koreanVal)}` : '';
+                
+                html += `
+                    <details>
+                        <summary><div><span class="tag">🍽️ ${typeVal}</span><span style="font-weight:bold;">${nameVal}</span><span class="sub-text">${dateVal}</span></div></summary>
+                        <div class="content-inner">
+                            ${innerHtml}
+                            <div class="btn-group">
+                                <a href="${mapUrl}" class="map-link" target="_blank">📍 Google Map</a>
+                                ${koreanVal ? `<a href="${naverSearchUrl}" class="map-link naver-link" target="_blank" onclick="copyText('${koreanVal}', false)">🟢 搜 Naver (自動複製)</a>` : ''}
+                                ${addressVal ? `<button class="copy-btn" onclick="copyText('${addressVal}')">📋 複製地址</button>` : ''}
+                            </div>
+                        </div>
+                    </details>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // 其餘保持穩定抓取
+        function renderFlights(data) {
+            const container = document.getElementById('flights');
+            if(!data || data.length === 0) { container.innerHTML = `<div class="empty-state">無航班資料</div>`; return; }
+            let html = '';
+            data.forEach(f => {
+                const keys = Object.keys(f);
+                html += `
+                    <details>
+                        <summary><div><span class="tag">${f[keys.find(k=>k.includes('航班'))] || ''}</span><span>${f[keys.find(k=>k.includes('起飛地點'))] || ''} ✈️ ${f[keys.find(k=>k.includes('抵達地點'))] || ''}</span><span class="sub-text">${f[keys.find(k=>k.includes('日期'))] || ''}</span></div></summary>
+                        <div class="content-inner">
+                            <div class="info-row"><b>起飛:</b> ${f[keys.find(k=>k.includes('起飛時間'))] || ''} (${f[keys.find(k=>k.includes('起飛地點'))] || ''}) 航廈: ${f[keys.find(k=>k.includes('航廈'))] || ''}</div>
+                            <div class="info-row"><b>抵達:</b> ${f[keys.find(k=>k.includes('抵達時間'))] || ''} (${f[keys.find(k=>k.includes('抵達地點'))] || ''})</div>
+                            <div class="info-row"><b>預約代號:</b> <span style="color:var(--accent);">${f[keys.find(k=>k.includes('預約代號'))] || '無'}</span></div>
+                            <div class="info-row"><b>備註:</b> ${f[keys.find(k=>k.includes('備註'))] || ''}</div>
+                        </div>
+                    </details>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderHotels(data) {
+            const container = document.getElementById('hotels');
+            if(!data || data.length === 0) { container.innerHTML = `<div class="empty-state">無住宿資料</div>`; return; }
+            let html = '';
+            data.forEach(h => {
+                const keys = Object.keys(h);
+                const name = h[keys.find(k=>k.includes('飯店名'))] || '';
+                const fullName = h[keys.find(k=>k.includes('全名'))] || name;
+                const mapUrl = getMapLink(fullName);
+                html += `
+                    <details>
+                        <summary><div style="width: 100%;"><div style="font-weight:bold; font-size:1.1em;">${name}</div><span class="sub-text">${h[keys.find(k=>k.includes('入住'))] || ''} ~ ${h[keys.find(k=>k.includes('退房'))] || ''} | 早餐: ${h[keys.find(k=>k.includes('早餐'))] || ''}</span></div></summary>
+                        <div class="content-inner">
+                            <div class="info-row"><b>房型:</b> ${h[keys.find(k=>k.includes('房型'))] || ''}</div>
+                            <div class="info-row"><b>預約號碼:</b> <span style="color:var(--accent);">${h[keys.find(k=>k.includes('預約號碼'))] || ''}</span></div>
+                            <div class="btn-group">
+                                <a href="${mapUrl}" class="map-link" target="_blank">📍 Google 導航</a>
+                                <button class="copy-btn" onclick="copyText('${fullName}')">📋 複製全名</button>
+                            </div>
+                        </div>
+                    </details>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderTransport(data) {
+            const container = document.getElementById('transport');
+            const filteredData = filterByDateRule(data);
+            if (filteredData.length === 0) { container.innerHTML = `<div class="empty-state">⚠️ 今日無交通安排</div>`; return; }
+            let html = '';
+            filteredData.forEach(t => {
+                const keys = Object.keys(t);
+                const link = t[keys.find(k=>k.includes('連結') || k.includes('聯結'))];
+                html += `
+                    <details>
+                        <summary><div><span class="tag">🚆 ${t[keys.find(k=>k.includes('交通工具'))] || ''}</span><span style="font-weight:bold;">${t[keys.find(k=>k.includes('時間'))] || ''} 出發</span><span class="sub-text">${t[keys.find(k=>k.includes('日期'))] || ''}</span></div></summary>
+                        <div class="content-inner">
+                            <div class="info-row"><b>細節:</b> <br>${t[keys.find(k=>k.includes('細節') || k.includes('備註'))] || ''}</div>
+                            ${link ? `<a href="${link}" class="map-link" target="_blank" style="margin-top:10px;">🔗 開啟連結</a>` : ''}
+                        </div>
+                    </details>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderOthers(data) {
+            const container = document.getElementById('others');
+            if (!data || data.length === 0) { container.innerHTML = `<div class="empty-state">目前無其他事項</div>`; return; }
+            let html = '';
+            data.forEach(o => {
+                const keys = Object.keys(o);
+                const link = o[keys.find(k=>k.includes('連結') || k.includes('聯結'))];
+                html += `
+                    <details>
+                        <summary><div style="font-weight:bold; font-size:1.1em;">📌 ${o[keys.find(k=>k.includes('事項'))] || ''}</div></summary>
+                        <div class="content-inner">
+                            <div class="info-row">${o[keys.find(k=>k.includes('細節') || k.includes('備註'))] || ''}</div>
+                            ${link ? `<a href="${link}" class="map-link" target="_blank" style="margin-top:10px;">🔗 開啟連結</a>` : ''}
+                        </div>
+                    </details>`;
+            });
+            container.innerHTML = html;
+        }
+
+        async function loadWeather() {
+            const today = new Date();
+            let city = 'Seoul', lat = 37.5665, lon = 126.9780, query = '首爾天氣';
+            
+            if (today >= new Date('2026/07/14') && today <= new Date('2026/07/19')) {
+                city = 'Fukuoka'; lat = 33.5902; lon = 130.4017; query = '福岡天氣';
+            } else if (today >= new Date('2026/07/20')) {
+                city = 'Kaohsiung'; lat = 22.6273; lon = 120.3014; query = '高雄天氣';
+            }
+
+            try {
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+                const weatherData = await res.json();
+                const temp = weatherData.current_weather.temperature;
+                const code = weatherData.current_weather.weathercode;
+                
+                let icon = '🌤️';
+                if (code === 0) icon = '☀️';
+                else if (code <= 3) icon = '⛅';
+                else if (code <= 48) icon = '🌫️';
+                else if (code <= 67) icon = '🌧️';
+                else if (code <= 77) icon = '❄️';
+                else icon = '⛈️';
+
+                document.getElementById('weather-icon').innerText = icon;
+                document.getElementById('weather-temp').innerText = `${Math.round(temp)}°C`;
+                document.getElementById('weather-city').innerText = city;
+                document.getElementById('weather-link').href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+            } catch (err) {
+                document.getElementById('weather-temp').innerText = "--°C";
+                document.getElementById('weather-city').innerText = "離線狀態";
+            }
+        }
+
+        window.onload = () => {
+            loadWeather();
+            loadAllData();
+        };
+    </script>
+</body>
+</html>
