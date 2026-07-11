@@ -83,6 +83,33 @@
         .empty-state { text-align: center; color: var(--text-sub); margin-top: 50px; }
         .empty-state span { display: block; font-size: 0.9em; margin-top: 5px; }
         .loading { text-align: center; color: var(--accent); margin-top: 50px; font-weight: bold; }
+
+        /* 今天 / 未來 行程區分樣式 */
+        .today-badge {
+            background: var(--accent);
+            color: var(--bg-color);
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-right: 8px;
+            white-space: nowrap;
+        }
+        details.today-card {
+            border: 1px solid var(--accent);
+            border-left: 4px solid var(--accent);
+            background: rgba(88, 166, 255, 0.07);
+        }
+        details.future-card {
+            opacity: 0.68;
+        }
+        details.future-card summary {
+            color: var(--text-sub);
+        }
+        details.future-card:hover,
+        details.future-card[open] {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -182,18 +209,38 @@
         //  各種動態渲染防錯位邏輯
         // ============================
 
-        function filterByDateRule(dataArray) {
-            const today = new Date();
-            const thresholdDate = new Date('2026/07/11');
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const dd = String(today.getDate()).padStart(2, '0');
-            const todayStr = `${yyyy}/${mm}/${dd}`;
+        // 把 "2026/7/12" 或 "2026-07-12" 這類字串轉成 Date（只取年月日，忽略時間）
+        function parseSheetDate(str) {
+            if (!str) return null;
+            const parts = String(str).trim().split(/[\/\-]/).map(Number);
+            if (parts.length < 3 || parts.some(isNaN)) return null;
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+        }
 
-            if (today < thresholdDate) return dataArray; 
+        function getTodayDateOnly() {
+            const t = new Date();
+            return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+        }
+
+        // 判斷某個項目的日期是否為「今天」，用於加上徽章/高亮
+        function isItemToday(dateStr) {
+            const itemDate = parseSheetDate(dateStr);
+            if (!itemDate) return false;
+            return itemDate.getTime() === getTodayDateOnly().getTime();
+        }
+
+        // 篩選規則：7/11 前顯示全部行程；7/11(含)之後，過去的行程自動隱藏，
+        // 只保留「今天」與「未來」的項目，兩者在渲染時會用不同樣式區分
+        function filterByDateRule(dataArray) {
+            const todayDateOnly = getTodayDateOnly();
+            const thresholdDate = new Date(2026, 6, 11); // 2026/07/11
+
+            if (todayDateOnly < thresholdDate) return dataArray;
+
             return dataArray.filter(item => {
                 const dateKey = Object.keys(item).find(k => k.includes('日期')) || Object.keys(item)[0];
-                return item[dateKey] === todayStr;
+                const itemDate = parseSheetDate(item[dateKey]);
+                return itemDate && itemDate.getTime() >= todayDateOnly.getTime();
             });
         }
 
@@ -201,7 +248,7 @@
         function renderItinerary(data) {
             const container = document.getElementById('itinerary');
             const filteredData = filterByDateRule(data);
-            if (filteredData.length === 0) { container.innerHTML = `<div class="empty-state">⚠️ 今日無行程安排</div>`; return; }
+            if (filteredData.length === 0) { container.innerHTML = `<div class="empty-state">⚠️ 沒有更多行程安排</div>`; return; }
             let html = '';
             
             filteredData.forEach(row => {
@@ -230,10 +277,14 @@
 
                 const mapUrl = getMapLink(addressVal || eventVal);
                 const naverSearchUrl = koreanVal ? `https://map.naver.com/v5/search/${encodeURIComponent(koreanVal)}` : '';
+
+                const todayFlag = isItemToday(dateVal);
+                const cardClass = todayFlag ? 'today-card' : 'future-card';
+                const todayBadge = todayFlag ? `<span class="today-badge">🔵 今天</span>` : '';
                 
                 html += `
-                    <details>
-                        <summary><div><span class="tag">🕒 ${timeVal}</span><span style="font-weight:bold;">${eventVal}</span><span class="sub-text">${dateVal}</span></div></summary>
+                    <details ${todayFlag ? 'open' : ''} class="${cardClass}">
+                        <summary><div>${todayBadge}<span class="tag">🕒 ${timeVal}</span><span style="font-weight:bold;">${eventVal}</span><span class="sub-text">${dateVal}</span></div></summary>
                         <div class="content-inner">
                             ${innerHtml}
                             
@@ -253,7 +304,7 @@
         function renderFood(data) {
             const container = document.getElementById('food');
             const filteredData = filterByDateRule(data);
-            if (filteredData.length === 0) { container.innerHTML = `<div class="empty-state">⚠️ 今日無餐廳安排</div>`; return; }
+            if (filteredData.length === 0) { container.innerHTML = `<div class="empty-state">⚠️ 沒有更多餐廳安排</div>`; return; }
             let html = '';
 
             filteredData.forEach(row => {
@@ -282,10 +333,14 @@
 
                 const mapUrl = getMapLink(addressVal || nameVal);
                 const naverSearchUrl = koreanVal ? `https://map.naver.com/v5/search/${encodeURIComponent(koreanVal)}` : '';
+
+                const todayFlag = isItemToday(dateVal);
+                const cardClass = todayFlag ? 'today-card' : 'future-card';
+                const todayBadge = todayFlag ? `<span class="today-badge">🔵 今天</span>` : '';
                 
                 html += `
-                    <details>
-                        <summary><div><span class="tag">🍽️ ${typeVal}</span><span style="font-weight:bold;">${nameVal}</span><span class="sub-text">${dateVal}</span></div></summary>
+                    <details ${todayFlag ? 'open' : ''} class="${cardClass}">
+                        <summary><div>${todayBadge}<span class="tag">🍽️ ${typeVal}</span><span style="font-weight:bold;">${nameVal}</span><span class="sub-text">${dateVal}</span></div></summary>
                         <div class="content-inner">
                             ${innerHtml}
                             <div class="btn-group">
@@ -335,7 +390,7 @@
         function renderTransport(data) {
             const container = document.getElementById('transport');
             const filteredData = filterByDateRule(data);
-            if (filteredData.length === 0) { container.innerHTML = `<div class="empty-state">⚠️ 今日無交通安排</div>`; return; }
+            if (filteredData.length === 0) { container.innerHTML = `<div class="empty-state">⚠️ 沒有更多交通安排</div>`; return; }
             let html = '';
             filteredData.forEach(t => {
                 const keys = Object.keys(t);
@@ -354,9 +409,13 @@
                 const timeVal = t[keys.find(k=>k.includes('時間') || k.includes('出發'))] || '';
                 const dateVal = t[keys.find(k=>k.includes('日期'))] || '';
 
+                const todayFlag = isItemToday(dateVal);
+                const cardClass = todayFlag ? 'today-card' : 'future-card';
+                const todayBadge = todayFlag ? `<span class="today-badge">🔵 今天</span>` : '';
+
                 html += `
-                    <details>
-                        <summary><div><span class="tag">🚆 ${toolVal}</span><span style="font-weight:bold;">${timeVal} 出發</span><span class="sub-text">${dateVal}</span></div></summary>
+                    <details ${todayFlag ? 'open' : ''} class="${cardClass}">
+                        <summary><div>${todayBadge}<span class="tag">🚆 ${toolVal}</span><span style="font-weight:bold;">${timeVal} 出發</span><span class="sub-text">${dateVal}</span></div></summary>
                         <div class="content-inner">
                             ${(startVal || endVal) ? `<div class="info-row"><b>路線:</b> <span style="color:var(--accent);">${startVal} ➔ ${endVal}</span></div>` : ''}
                             ${noteVal ? `<div class="info-row"><b>備註:</b> ${noteVal}</div>` : ''}
